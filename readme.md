@@ -1,5 +1,5 @@
 
-<img src="images/TRstagger192.png" style="display: block; height: 12em; margin: 0 auto;"/>
+<img src="TRstagger192.png" style="display: block; height: 12em; margin: 0 auto;"/>
 
 TR is a public, permissionless, Decentralized Identifier (DID) network based on the ION open source solution that implements the blockchain-agnostic Sidetree protocol on top of Bitcoin (as a 'Layer 2' overlay) to support DIDs/DPKI (Decentralized Public Key Infrastructure) at scale.
 

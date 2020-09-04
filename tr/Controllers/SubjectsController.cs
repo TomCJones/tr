@@ -1,32 +1,48 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Primitives;
 using tr.Models;
+using tr.Data;
+using static tr.Data.Base;
+using CredStore;
+using Microsoft.Extensions.Logging;
 
 namespace tr.Controllers
 {
-    [Route("tr")]
     [ApiController]
+    [Route("tr")]
     public class SubjectsController : ControllerBase
     {
+
+        private readonly ICredStoreSvc _kss;
         private readonly SubjectDbContext _context;
-
-        public SubjectsController(SubjectDbContext context)
+        private readonly ILogger _logger;
+        
+        public SubjectsController (
+            SubjectDbContext dbContext,
+            ILogger<SubjectsController> logger,
+            ICredStoreSvc kss)
         {
-            _context = context;
+            _kss = kss;
+            _logger = logger;
+            _context = dbContext;
         }
-
+        /*
         // GET: api/Subjects
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Subject>>> GetSubjects()
         {
             return await _context.Subjects.ToListAsync();
         }
-
+        
         // GET: api/Subjects/5
         [HttpGet("{id}")]
         public async Task<ActionResult<Subject>> GetSubject(long id)
@@ -40,10 +56,9 @@ namespace tr.Controllers
 
             return subject;
         }
-
+        
         // PUT: api/Subjects/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to, for
-        // more details, see https://go.microsoft.com/fwlink/?linkid=2123754.
+        // To protect from overposting attacks, enable the specific properties you want to bind to, for more details, see https://go.microsoft.com/fwlink/?linkid=2123754.
         [HttpPut("{id}")]
         public async Task<IActionResult> PutSubject(long id, Subject subject)
         {
@@ -72,19 +87,38 @@ namespace tr.Controllers
 
             return NoContent();
         }
-
-        // POST: api/Subjects
-        // To protect from overposting attacks, enable the specific properties you want to bind to, for
-        // more details, see https://go.microsoft.com/fwlink/?linkid=2123754.
+        */
+        // POST: tr
+        // To protect from overposting attacks, enable the specific properties you want to bind to, for more details, see https://go.microsoft.com/fwlink/?linkid=2123754.
         [HttpPost]
-        public async Task<ActionResult<Subject>> PostSubject(Subject subject)
+        public async Task<ActionResult<string>> Post()
         {
-            _context.Subjects.Add(subject);
-            await _context.SaveChangesAsync();
+            string jsonOut = "{err=not_recognized}";
+            string respBody = await new StreamReader(Request.Body).ReadToEndAsync();
+            string contentType = Request.ContentType;
+            StringValues userAgent;
+            Request.Headers.TryGetValue("User-Agent", out userAgent);
 
-            return CreatedAtAction("GetSubject", new { id = subject.Id }, subject);
+            JsonError jerr = new JsonError
+            {
+                operation = "fetch csp",
+                error = "invalid request",
+                error_description = "must be at least 3 parts to a jose request"
+            };
+
+            string[] splitBody = respBody.Split('.');
+            if (splitBody.Length < 3)
+            {
+                string jeOut = JsonSerializer.Serialize(jerr);
+                CredentialDocResult cdr1 = new CredentialDocResult("{\"alg\": \"RS256\"}", jeOut, 0);
+                return (await cdr1.SignCDR(_kss))[0];
+            }
+
+            string json = "{ }";
+
+            return CreatedAtAction("Post",jsonOut);
         }
-
+        /*
         // DELETE: api/Subjects/5
         [HttpDelete("{id}")]
         public async Task<ActionResult<Subject>> DeleteSubject(long id)
@@ -105,5 +139,6 @@ namespace tr.Controllers
         {
             return _context.Subjects.Any(e => e.Id == id);
         }
+        */
     }
 }

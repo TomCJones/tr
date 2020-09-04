@@ -14,6 +14,7 @@ using Microsoft.EntityFrameworkCore;
 using tr.Models;
 using Newtonsoft.Json.Linq;
 using System.IO;
+using CredStore;
 
 namespace tr
 {
@@ -56,7 +57,7 @@ namespace tr
         {
             services.AddDbContext<SubjectDbContext>(opt =>
                opt.UseSqlServer(connexStr));
-
+            services.AddSingleton<ICredStoreSvc, CredStoreSvc>();
             services.AddControllers();
         }
 
